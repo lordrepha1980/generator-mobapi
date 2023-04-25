@@ -1,8 +1,8 @@
 {
   "name": "generator-mobapi",
-  "version": "0.1.1",
-  "description": "",
-  "homepage": "",
+  "version": "1.1.0",
+  "description": "CLI for MobAPI",
+  "homepage": "https://github.com/lordrepha1980/generator-mobapi",
   "author": {
     "name": "Christoph Duengel",
     "email": "freelancer@christoph-duengel.de",
@@ -14,7 +14,8 @@
   "main": "generators/index.js",
   "keywords": [
     "yeoman-generator",
-    "yeoman-generator"
+    "MobAPI",
+    "generator-mobapi"
   ],
   "devDependencies": {
     "eslint": "^6.6.0",
@@ -78,6 +79,6 @@
     "pretest": "eslint .",
     "test": "jest"
   },
-  "repository": "https://github.com/lordrepha1980/MobAPI-CLI.git",
+  "repository": "https://github.com/lordrepha1980/generator-mobapi",
   "license": "ISC"
 }
