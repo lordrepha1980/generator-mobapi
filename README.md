@@ -21,7 +21,6 @@ Update your Project with the latest Version from MobAPI:
 ```bash
 yo mobapi update
 ```
-This command don't copy custom files 
 
 ## License
 

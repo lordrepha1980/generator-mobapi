@@ -28,11 +28,11 @@ module.exports = class extends Generator {
                 },
                 (err, data) => {
                     if (err) {
-                        console.log(chalk.red("Something went wrong..."));
-                        console.dir(err);
+                        this.log(chalk.red("Something went wrong..."));
+                        this.dir(err);
                         reject();
                     }
-                    console.log(chalk.blue(data));
+                    this.log(chalk.blue(data));
                     resolve();
             });
         })
@@ -86,43 +86,43 @@ module.exports = class extends Generator {
 
                     //create backup directory
                     const backupDir = `../MobAPI-backup-${Date.now()}`
-                    console.log(chalk.yellow(`Creating Backup from directory ${dirname} to parent ${backupDir}`))
+                    this.log(chalk.yellow(`Creating Backup from directory ${dirname} to parent ${backupDir}`))
                     Fs.mkdirSync(backupDir);
-                    console.log(updateFiles)
                     //copy files to backup directory
                     for ( const fileName of updateFiles ) {
-                        this.fs.copy(
-                            this.destinationPath(`./${fileName}`),
-                            `${backupDir}/${fileName}`
-                        );
+                        if ( fileName !== 'node_modules' )
+                            this.fs.copy(
+                                this.destinationPath(`./${fileName}`),
+                                `${backupDir}/${fileName}`
+                            );
                     }
-                    console.log(chalk.green('Backup created...'))
+                    this.log(chalk.green('Backup created...'))
                 }
                 //get git master repository
-                console.log(chalk.yellow('Downloading MobAPI...'))
+                this.log(chalk.yellow('Downloading MobAPI...'))
                 const { data } =   await Axios.get('https://github.com/lordrepha1980/MobAPI/archive/refs/heads/master.zip', { responseType: 'arraybuffer' })
-                console.log(chalk.yellow('Downloaded MobAPI...'))
+                this.log(chalk.yellow('Downloaded MobAPI...'))
                 
                 //write repo to temp directory
                 if ( data ) {
                     //write zip file to tmp directory
-                    console.log(chalk.yellow('Writing MobAPI to temp directory...'))
+                    this.log(chalk.yellow('Writing MobAPI to temp directory...'))
                     Fs.writeFileSync(`${tmpDir}/MobAPI.zip`, data);
 
                     //unpack zip file in tmp directory
-                    console.log(chalk.yellow('Unpacking MobAPI...'))
+                    this.log(chalk.yellow('Unpacking MobAPI...'))
                     await Extract(`${tmpDir}/MobAPI.zip`, { dir: `${tmpDir}` })
 
                     if (this.args[0] === 'init')
                         //copy files to destination
-                        console.log(chalk.yellow('Copying MobAPI to destination...'))
+                        this.log(chalk.yellow('Copying MobAPI to destination...'))
                         this.fs.copy(
                             `${tmpDir}/MobAPI-master`,
                             this.destinationPath(`./`)
                         );
 
                     if (this.args[0] === 'update') {
-                        console.log(chalk.yellow('Updating MobAPI...'))
+                        this.log(chalk.yellow('Updating MobAPI...'))
                         const updateFiles = [
                             'README.md',
                             'app.js',
@@ -138,21 +138,21 @@ module.exports = class extends Generator {
                             );
                         }
                     }
-                    console.log(chalk.yellow('Installing MobAPI dependencies...'))
+                    this.log(chalk.yellow('Installing MobAPI dependencies...'))
                     this.installDependencies({ bower: false, yarn: false, npm: true });
                 }
             } else {
-                console.log(chalk.red('User Abort!'))
+                this.log(chalk.red('User Abort!'))
             }
         } catch (error) {
-            console.log(chalk.red('MobAPI Error!'))
-            console.log(error)
+            this.log(chalk.red('MobAPI Error!'))
+            this.log(error)
             throw new Error('Error while downloading MobAPI')
         }
     }
 
     end() {
-        console.log(chalk.green('MobAPI ready!'))
-        console.log(chalk.blue('Documentation: https://github.com/lordrepha1980/MobAPI#mobapi'))
+        this.log(chalk.green('MobAPI ready!'))
+        this.log(chalk.blue('Documentation: https://github.com/lordrepha1980/MobAPI#mobapi'))
     }
 };
