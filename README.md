@@ -22,6 +22,9 @@ Update your Project with the latest Version from MobAPI:
 yo mobapi update
 ```
 
+## package.json
+The package.json file of MobAPI is merged into your project's package.json file. You can find all the changes in the package_changes.txt file.
+
 ## License
 
 ISC © [Christoph Duengel](christoph-duengel.de)
