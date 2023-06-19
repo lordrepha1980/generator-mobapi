@@ -248,6 +248,11 @@ module.exports = class extends generator {
               ...packageFileNew
             };
 
+            mergedPackage.dependencies = {
+              ...packageFileOld.dependencies,
+              ...packageFileNew.dependencies
+            };
+
             const changes = compareObjects(packageFileOld, mergedPackage);
 
             Fs.writeFileSync(
