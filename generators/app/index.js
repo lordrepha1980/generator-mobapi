@@ -1,3 +1,4 @@
+/* eslint-disable camelcase */
 "use strict";
 const generator = require("yeoman-generator");
 const chalk = require("chalk");
@@ -10,7 +11,6 @@ const Axios = require("axios");
 const extract = require("extract-zip");
 const figlet = require("figlet");
 const archiver = require("archiver");
-
 module.exports = class extends generator {
   mobAPI() {
     return new Promise((resolve, reject) => {
@@ -25,7 +25,7 @@ module.exports = class extends generator {
         },
         (err, data) => {
           if (err) {
-            this.log(chalk.red("Something went wrong..."));
+            this.log(chalk.red("Something went wrong"));
             this.dir(err);
             reject();
           }
@@ -83,38 +83,52 @@ module.exports = class extends generator {
 
   async asyncTask() {
     const dirname = this.destinationPath(`./`);
+    let spin = null;
+
+    async function startSpinner({ text }) {
+      const ora = await (await import("ora")).default;
+      spin = ora({
+        text: chalk.yellow(text),
+        spinner: "aesthetic",
+        color: "yellow"
+      }).start();
+    }
+
+    function stopSpinner({ text }) {
+      spin.succeed(chalk.green(text));
+    }
 
     /* eslint-disable */
     function compareObjects(obj1, obj2, path = "") {
-      const changes = [];
+        const changes = [];
 
-      // Compare properties of obj1 with obj2
-      for (let prop in obj1) {
-        const fullPath = path ? `${path}.${prop}` : prop;
+        // Compare properties of obj1 with obj2
+        for (let prop in obj1) {
+            const fullPath = path ? `${path}.${prop}` : prop;
 
-        if (typeof obj1[prop] === "object" && typeof obj2[prop] === "object") {
-          // Recurse if both properties are objects
-          changes.push(...compareObjects(obj1[prop], obj2[prop], fullPath));
-        } else if (obj1[prop] !== obj2[prop]) {
-          // Otherwise compare the properties
-          changes.push(
-            `${obj1[prop] ? "- " + fullPath + ": " + obj1[prop] : ""}\n${
-              obj2[prop] ? "+ " + fullPath + ": " + obj2[prop] : ""
-            }`
-          );
+            if (typeof obj1[prop] === "object" && typeof obj2[prop] === "object") {
+                // Recurse if both properties are objects
+                changes.push(...compareObjects(obj1[prop], obj2[prop], fullPath));
+            } else if (obj1[prop] !== obj2[prop]) {
+                // Otherwise compare the properties
+                changes.push(
+                    `${obj1[prop] ? "- " + fullPath + ": " + obj1[prop] : ""}\n${
+                    obj2[prop] ? "+ " + fullPath + ": " + obj2[prop] : ""
+                    }`
+                );
+            }
         }
-      }
 
       // Compare properties of obj2 with obj1
-      for (let prop in obj2) {
-        const fullPath = path ? `${path}.${prop}` : prop;
+        for (let prop in obj2) {
+            const fullPath = path ? `${path}.${prop}` : prop;
 
-        if (!(prop in obj1)) {
-          changes.push(
-            `${obj2[prop] ? "+ " + fullPath + ": " + obj2[prop] : ""}`
-          );
+            if (!(prop in obj1)) {
+                changes.push(
+                    `${obj2[prop] ? "+ " + fullPath + ": " + obj2[prop] : ""}`
+                );
+            }
         }
-      }
 
       return changes;
     }
@@ -139,7 +153,8 @@ module.exports = class extends generator {
         });
 
         archive.on("error", err => {
-          this.log("Error ZIP-Archivs:", err);
+          this.log(chalk.red("Error ZIP-Archivs:"));
+          this.log(err);
           reject();
         });
       });
@@ -149,12 +164,13 @@ module.exports = class extends generator {
       if (this.props.confirm === true) {
         const masterDir = `MobAPI-master-${Date.now()}`;
         if (this.props.backup === true) {
+          await startSpinner({
+            text: `Creating Backup ZIP from directory ${dirname}`
+          });
           // Create backup directory
           const backupFolder = `MobAPI-backup-${Date.now()}`;
           const backupDir = `${tmpDir}/${backupFolder}`;
-          this.log(
-            chalk.yellow(`Creating Backup ZIP from directory ${dirname}`)
-          );
+
           Fs.mkdirSync(backupDir);
 
           // Copy files to backup directory
@@ -167,36 +183,37 @@ module.exports = class extends generator {
             dirname
           });
 
-          this.log(chalk.green("Backup ZIP created"));
+          stopSpinner({ text: `Backup ZIP created` });
         }
 
         // Get git master repository
-        this.log(chalk.yellow("Downloading MobAPI..."));
-
         const {
           // eslint-disable-next-line
-            data: { zipball_url, tag_name }
+            data: { zipball_url: zipURL, tag_name: tagName }
         } = await Axios.get(
           "https://api.github.com/repos/lordrepha1980/MobAPI/releases/latest"
         );
         // eslint-disable-next-line
-        this.log(chalk.yellow(`MobAPI newest Version: ${tag_name}`));
-        const { data } = await Axios.get(zipball_url, {
+        await startSpinner({ text: `Downloading MobAPI Version ${tagName} (latest)` });
+        const { data } = await Axios.get(zipURL, {
           responseType: "arraybuffer"
         });
-        this.log(chalk.green("Download MobAPI finished"));
+        // eslint-disable-next-line
+        stopSpinner({ text: `Download MobAPI ${tagName} (latest) finished` });
 
         // Write repo to temp directory
         if (data) {
           // Write zip file to tmp directory
-          this.log(chalk.yellow("Writing MobAPI to temp directory..."));
+          await startSpinner({ text: "Writing MobAPI to temp directory" });
           Fs.writeFileSync(`${tmpDir}/MobAPI.zip`, data);
+          stopSpinner({ text: "Writing MobAPI to temp directory finished" });
 
           // Unpack zip file in tmp directory
-          this.log(chalk.yellow("Unpacking MobAPI..."));
+          await startSpinner({ text: "Unpacking MobAPI" });
           await extract(`${tmpDir}/MobAPI.zip`, {
             dir: `${tmpDir}/${masterDir}`
           });
+          stopSpinner({ text: "Unpacking MobAPI finished" });
 
           // Reade source dir
           const sourceDirRead = Fs.readdirSync(`${tmpDir}/${masterDir}`);
@@ -204,15 +221,16 @@ module.exports = class extends generator {
 
           if (this.args[0] === "init") {
             // Copy files to destination
-            this.log(chalk.yellow("Copying MobAPI to destination..."));
+            await startSpinner({ text: "Copying MobAPI to destination" });
             this.fs.copy(
               `${tmpDir}/${masterDir}/${sourceDir}`,
               this.destinationPath(`./`)
             );
+            stopSpinner({ text: "Copying MobAPI to destination finished" });
           }
 
           if (this.args[0] === "update") {
-            this.log(chalk.yellow("Updating MobAPI..."));
+            await startSpinner({ text: "Updating MobAPI" });
 
             // Copy old package.json ins tmp
             const packageName = `package-${Date.now()}.json`;
@@ -236,12 +254,12 @@ module.exports = class extends generator {
               );
             }
 
-            this.log(chalk.green(`Update done`));
+            stopSpinner({ text: "Updating MobAPI finished" });
 
-            this.log(chalk.yellow(`Merge package.json...`));
+            await startSpinner({ text: "Merge package.json" });
             const packageFileNew = require(`${tmpDir}/${masterDir}/${sourceDir}/package.json`);
             const packageFileOld = require(`${tmpDir}/${packageName}`);
-            this.log(chalk.green(`Merge done`));
+            stopSpinner({ text: "Merge package.json finished" });
 
             const mergedPackage = {
               ...packageFileOld,
@@ -259,6 +277,7 @@ module.exports = class extends generator {
               this.destinationPath(`./package.json`),
               JSON.stringify(mergedPackage, false, 2)
             );
+
             Fs.writeFileSync(
               this.destinationPath(`./package_changes.txt`),
               changes.join("\n")
@@ -277,14 +296,29 @@ module.exports = class extends generator {
 
   async end() {
     if (this.props.confirm === false) return;
+    let spin = null;
+    async function startSpinner({ text }) {
+      const ora = await (await import("ora")).default;
+      spin = ora({
+        text: chalk.yellow(text),
+        spinner: "aesthetic",
+        color: "yellow"
+      }).start();
+    }
 
-    this.log(chalk.yellow("Installing MobAPI dependencies..."));
-    const result = this.spawnCommandSync("npm", ["install"]);
+    function stopSpinner({ text }) {
+      spin.succeed(chalk.green(text));
+    }
+
+    await startSpinner({ text: "Installing MobAPI dependencies" });
+    const result = this.spawnCommandSync("npm", ["install"], {
+      stdio: ["ignore", "ignore", "ignore"] // Hier stdout und stderr tauschen
+    });
     // eslint-disable-next-line
     if (result.status !== 0) {
-      this.log(chalk.red("Error installing dependencies"));
+      spin.fail(chalk.red("Error installing dependencies"));
     } else {
-      this.log(chalk.green("MobAPI dependencies installed"));
+      stopSpinner({ text: "Installing MobAPI dependencies finished" });
       this.log(chalk.green("MobAPI ready!"));
       this.log(
         chalk.green(
