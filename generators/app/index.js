@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 "use strict";
 const generator = require("yeoman-generator");
 const chalk = require("chalk");
@@ -188,17 +187,18 @@ module.exports = class extends generator {
 
         // Get git master repository
         const {
-          // eslint-disable-next-line
-            data: { zipball_url: zipURL, tag_name: tagName }
+          data: { zipball_url: zipURL, tag_name: tagName }
         } = await Axios.get(
           "https://api.github.com/repos/lordrepha1980/MobAPI/releases/latest"
         );
-        // eslint-disable-next-line
-        await startSpinner({ text: `Downloading MobAPI Version ${tagName} (latest)` });
+
+        await startSpinner({
+          text: `Downloading MobAPI Version ${tagName} (latest)`
+        });
         const { data } = await Axios.get(zipURL, {
           responseType: "arraybuffer"
         });
-        // eslint-disable-next-line
+
         stopSpinner({ text: `Download MobAPI ${tagName} (latest) finished` });
 
         // Write repo to temp directory
