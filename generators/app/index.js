@@ -84,17 +84,17 @@ module.exports = class extends generator {
     const dirname = this.destinationPath(`./`);
     let spin = null;
 
-    async function startSpinner({ text }) {
+    async function startSpinner({ text, color }) {
       const ora = await (await import("ora")).default;
       spin = ora({
-        text: chalk.yellow(text),
+        text: chalk[color || "yellow"](text),
         spinner: "aesthetic",
         color: "yellow"
       }).start();
     }
 
-    function stopSpinner({ text }) {
-      spin.succeed(chalk.green(text));
+    function stopSpinner({ text, color }) {
+      spin.succeed(chalk[color || "green"](text));
     }
 
     /* eslint-disable */
@@ -161,6 +161,28 @@ module.exports = class extends generator {
 
     try {
       if (this.props.confirm === true) {
+        if (this.args[0] === "init") {
+          // Create .gitignore
+          Fs.writeFileSync(
+            this.destinationPath(`./.gitignore`),
+            "#Default MobApi\nnode_modules\n.DS_Store\n.DS\n.env"
+          );
+        }
+
+        if (this.args[0] !== "init") {
+          try {
+            await startSpinner({ text: "Check MobApi project" });
+            const pack = require(this.destinationPath(`./package.json`));
+            if (!pack || pack.name !== "MobAPI") {
+              throw new Error("Not a MobAPI project");
+            }
+          } catch {
+            throw new Error("Not a MobAPI project");
+          }
+
+          stopSpinner({ text: `Directory is a MobApi Project` });
+        }
+
         const masterDir = `MobAPI-master-${Date.now()}`;
         if (this.props.backup === true) {
           await startSpinner({
@@ -247,12 +269,12 @@ module.exports = class extends generator {
               "server/database/"
             ];
             // Copy files to destination
-            for (const fileName of updateFiles) {
+            updateFiles.forEach(fileName => {
               FsExtra.copySync(
                 `${tmpDir}/${masterDir}/${sourceDir}/${fileName}`,
                 this.destinationPath(`./${fileName}`)
               );
-            }
+            });
 
             stopSpinner({ text: "Updating MobAPI finished" });
 
@@ -288,9 +310,8 @@ module.exports = class extends generator {
         this.log(chalk.red("User Abort!"));
       }
     } catch (error) {
-      this.log(chalk.red("MobAPI Error!"));
-      this.log(error);
-      throw new Error("Error while downloading MobAPI");
+      stopSpinner({ text: error, color: "red" });
+      throw new Error(error);
     }
   }
 
@@ -298,7 +319,7 @@ module.exports = class extends generator {
     if (this.props.confirm === false) return;
     let spin = null;
     async function startSpinner({ text }) {
-      const ora = await (await import("ora")).default;
+      const ora = (await import("ora")).default;
       spin = ora({
         text: chalk.yellow(text),
         spinner: "aesthetic",
